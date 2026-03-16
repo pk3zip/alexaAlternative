@@ -1,73 +1,66 @@
 import { configType } from "./config";
 import { spawn } from "child_process";
-import * as fs from "fs";
-import * as path from "path";
 
 export class microphoneCapture {
   private isRecording: boolean = false;
   private recordingProcess: ReturnType<typeof spawn> | null = null;
-  private outputPath: string;
+  private dataCallback: ((chunk: Buffer) => void) | null = null;
 
-  private constructor(private global_config: configType) {
-    this.outputPath = path.join(process.cwd(), "capture.wav");
-  }
+  private constructor(private global_config: configType) {}
 
   static new(global_config: configType): microphoneCapture {
     return new microphoneCapture(global_config);
   }
 
+  onData(callback: (chunk: Buffer) => void): void {
+    this.dataCallback = callback;
+  }
+
   startRecording(): void {
     if (this.isRecording) return;
-
     this.isRecording = true;
 
-    // arecord is standard on Linux ALSA — works on most SBCs out of the box
-    this.recordingProcess = spawn("arecord", [
-      "-D",
-      "default",
-      "-f",
-      "S16_LE", // 16-bit signed little endian
-      "-r",
-      "16000", // 16khz — good for speech recognition
-      "-c",
-      "1", // mono — fine for wake word detection
-      this.outputPath,
-    ]);
+    this.recordingProcess = spawn(
+      "arecord",
+      ["-D", "default", "-t", "raw", "-f", "S16_LE", "-r", "16000", "-c", "1"],
+      {
+        stdio: ["ignore", "pipe", "ignore"], // ignore stderr entirely
+      },
+    );
+
+    // Pipe raw audio to VAD via stdout as well as writing to file
+    this.recordingProcess.stdout?.on("data", (chunk: Buffer) => {
+      if (this.dataCallback) {
+        this.dataCallback(chunk);
+      }
+    });
 
     this.recordingProcess.stderr?.on("data", (data) => {
       console.error(`[mic error]: ${data}`);
     });
 
-    this.recordingProcess.on("close", (code) => {
+    this.recordingProcess.on("close", () => {
       this.isRecording = false;
-      console.log(`[mic] recording stopped with code ${code}`);
     });
   }
 
-  stopRecording(): Promise<string> {
-    return new Promise((resolve, reject) => {
+  stopRecording(): Promise<void> {
+    return new Promise((resolve) => {
       if (!this.recordingProcess || !this.isRecording) {
-        reject(new Error("No active recording"));
+        resolve();
         return;
       }
 
-      this.recordingProcess.on("close", () => {
-        if (fs.existsSync(this.outputPath)) {
-          resolve(this.outputPath);
-        } else {
-          reject(new Error("Recording file not found after stop"));
-        }
+      this.recordingProcess.once("close", () => {
+        this.isRecording = false;
+        resolve();
       });
 
-      this.recordingProcess.kill("SIGTERM");
+      this.recordingProcess.kill("SIGINT");
     });
   }
 
   get recording() {
     return this.isRecording;
-  }
-
-  get filePath() {
-    return this.outputPath;
   }
 }

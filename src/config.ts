@@ -6,9 +6,15 @@ denv_config({
 });
 
 export const configSchema = z.object({
-  ANTHROPIC_API_KEY: z.string().regex(/^sk-ant-[a-zA-Z0-9_-]{93}$/),
-  MODEL: z.string().default("claude-sonnet-4-6"),
+  ANTHROPIC_API_KEY: z.string().regex(/^sk-ant-[a-zA-Z0-9_-]+$/),
+  MODEL: z.string().default("claude-3-5-sonnet-20240620"),
   AGENT_NAME: z.string().default("riker"),
+  WHISPER_CLI_PATH: z
+    .string()
+    .default("vendor/whisper.cpp/build/bin/whisper-cli"),
+  WHISPER_MODEL_PATH: z
+    .string()
+    .default("vendor/whisper.cpp/models/ggml-base.en.bin"),
 });
 
 export type configType = z.infer<typeof configSchema>;

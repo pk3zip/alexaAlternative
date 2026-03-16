@@ -6,7 +6,11 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "build": "node build.js",
+    "prerun": "npm run build",
+    "run": "node --enable-source-maps dist/index.js"
   },
   "author": "",
   "license": "GPL-3.0-or-later",
@@ -22,6 +26,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
     "dotenv": "^17.3.1",
+    "kokoro-js": "^1.2.1",
+    "node-vad": "^1.1.4",
+    "play-sound": "^1.1.6",
     "zod": "^4.3.6"
   }
 }

@@ -12,8 +12,10 @@ export class wakeWordDetector {
   }
 
   detect(input: string): boolean {
-    const words = input.toLowerCase().trim().split(/\s+/);
-    return words.includes(this.wake_word);
+    const lower = input.toLowerCase().trim();
+    // Using a regex with word boundaries (\b) is much more robust
+    const regex = new RegExp(`\\b${this.wake_word}\\b`, "i");
+    return regex.test(lower);
   }
 
   extractCommand(input: string): string | null {
@@ -22,7 +24,12 @@ export class wakeWordDetector {
 
     if (index === -1) return null;
 
-    const command = input.slice(index + this.wake_word.length).trim();
+    // Remove everything before and including the wake word
+    let command = lower.substring(index + this.wake_word.length).trim();
+    
+    // Remove leading punctuation common in transcripts
+    command = command.replace(/^[,.?!:;]+/, "").trim();
+    
     return command.length > 0 ? command : null;
   }
 

@@ -1,4 +1,26 @@
+# Build output
 dist/
+
+# Dependencies
 node_modules/
+
+# Environment files
 .env*
 !.env-example
+
+# Whisper vendor
+vendor/whisper.cpp/
+
+# Whisper models — these are large binary files, never commit them
+*.bin
+*.gguf
+
+# Temp audio captures from your mic class
+*.wav
+
+# TypeScript cache
+*.tsbuildinfo
+
+# OS noise
+.DS_Store
+Thumbs.db
