@@ -1,6 +1,6 @@
+import { Cacheable } from "./cacheable";
 import { configType } from "./config";
 
-// Uses ip-api.com (free, no key needed, 45 req/min limit).
 async function resolveLocation(): Promise<string> {
   try {
     const res = await fetch(
@@ -17,7 +17,7 @@ async function resolveLocation(): Promise<string> {
 }
 
 export class systemPrompt {
-  private locationCache: Promise<string> = resolveLocation();
+  private location = new Cacheable(resolveLocation, 60 * 5);
 
   private constructor(private global_config: configType) {}
 
@@ -26,7 +26,7 @@ export class systemPrompt {
   }
 
   async getPrompt(): Promise<string> {
-    const location = await this.locationCache;
+    const location = await this.location.get();
     return `You are a smart home voice assistant named ${this.global_config.AGENT_NAME}. You are helpful, concise, and friendly. You respond to user requests clearly and directly, without unnecessary filler or long explanations.
   You can help with:
   - Answering general knowledge questions
@@ -49,6 +49,6 @@ export class systemPrompt {
   }
 
   refreshLocation() {
-    this.locationCache = resolveLocation();
+    this.location.reset();
   }
 }

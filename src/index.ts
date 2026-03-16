@@ -2,7 +2,7 @@ import { AIManager } from "./aiManager";
 import { config } from "./config";
 import { listener } from "./listener";
 import { systemPrompt } from "./systemPrompt";
-import { TTSManager } from "./ttsMaanager";
+import { TTSManager } from "./ttsManager";
 
 const agent = listener.new(config);
 const prompt = systemPrompt.new(config);
