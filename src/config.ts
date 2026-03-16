@@ -15,6 +15,7 @@ export const configSchema = z.object({
   WHISPER_MODEL_PATH: z
     .string()
     .default("vendor/whisper.cpp/models/ggml-base.en.bin"),
+  STORAGE_PATH: z.string().default("persistant.json"),
 });
 
 export type configType = z.infer<typeof configSchema>;

@@ -1,6 +1,7 @@
 import { AIManager } from "./aiManager";
 import { config } from "./config";
 import { listener } from "./listener";
+import { PersistentStorage } from "./persistantStorage";
 import { systemPrompt } from "./systemPrompt";
 import { TTSManager } from "./ttsManager";
 
@@ -10,7 +11,8 @@ const ai = AIManager.new(config, prompt)
   .enableWebFetchTool()
   .enableWebSearchTool();
 const tts = TTSManager.new();
-// POC — send command to Anthropic API
+const persistantStorage = PersistentStorage.new(ai, config);
+
 agent.onCommand = async (command: string) => {
   console.log(`[index] command received: "${command}"`);
   const response = await ai.chat([{ role: "user", content: command }]);
@@ -20,6 +22,7 @@ agent.onCommand = async (command: string) => {
 
 const shutdown = () => {
   console.log("\n[index] shutting down gracefully...");
+  persistantStorage.commit();
   agent.stop();
   process.exit(0);
 };

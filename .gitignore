@@ -21,6 +21,8 @@ vendor/whisper.cpp/
 # TypeScript cache
 *.tsbuildinfo
 
+persistant.json
+
 # OS noise
 .DS_Store
 Thumbs.db
