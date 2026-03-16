@@ -6,6 +6,7 @@ import * as fs from "fs";
 import * as util from "util";
 import * as path from "path";
 import VAD from "node-vad";
+import { BuildExec } from "./buildExec";
 
 const execPromise = util.promisify(exec);
 
@@ -57,12 +58,14 @@ export class listener {
       if (!fs.existsSync(filePath)) return "";
 
       // -nt and --no-timestamps help get clean text
-      const { stdout } = await execPromise(
-        `${this.global_config.WHISPER_CLI_PATH} --model ${this.global_config.WHISPER_MODEL_PATH} -f ${filePath} --no-timestamps -nt`,
-      );
-      
+      const { stdout } =
+        await BuildExec.new`${this.global_config.WHISPER_CLI_PATH} --model ${this.global_config.WHISPER_MODEL_PATH} -f ${filePath} --no-timestamps -nt`.run();
+
       // Remove any remaining metadata or noise from the output
-      return stdout.replace(/\[.*?\]/g, "").trim().toLowerCase();
+      return stdout
+        .replace(/\[.*?\]/g, "")
+        .trim()
+        .toLowerCase();
     } catch (err) {
       console.error("[transcribe] failed:", err);
       return "";
@@ -71,7 +74,7 @@ export class listener {
 
   private async captureUntilSilence(): Promise<string> {
     const tempPath = path.join(process.cwd(), `capture_${Date.now()}.wav`);
-    
+
     return new Promise((resolve) => {
       const frames: Buffer[] = [];
       let silenceFrameCount = 0;
@@ -106,7 +109,7 @@ export class listener {
                 console.log("[listener] silence detected, finishing...");
                 isFinalizing = true;
                 await this.mic.stopRecording();
-                
+
                 const wavBuffer = this.writeWavHeader(Buffer.concat(frames));
                 fs.writeFileSync(tempPath, wavBuffer);
                 resolve(tempPath);
@@ -152,7 +155,7 @@ export class listener {
         }
       } catch (err) {
         console.error("[listener] loop error:", err);
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1000));
       }
     }
   }
