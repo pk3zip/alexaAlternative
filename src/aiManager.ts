@@ -21,8 +21,8 @@ export class AIManager {
     private global_config: configType,
     private ai: Anthropic,
     private systemPrompt: systemPrompt,
-    private mcpServers = [],
     private tools: [Anthropic.Tool, ToolCallback][] = [],
+    private history: Anthropic.MessageParam[] = [],
     private model: string = global_config.MODEL,
     private enableWebSearch: boolean = false,
     private enableWebFetch: boolean = false,
@@ -108,36 +108,36 @@ export class AIManager {
     messages: Anthropic.MessageParam[],
     maxTokens: number = 4096,
   ): Promise<string> {
-    const history: Anthropic.MessageParam[] = [...messages];
+    this.history.push(...messages);
 
     while (true) {
       const response = await this.ai.messages.create({
         model: this.model,
         max_tokens: maxTokens,
         tools: this.getAllTools(),
-        messages: history,
+        messages: this.history,
         system: await this.systemPrompt.getPrompt(),
       });
 
-      history.push({ role: "assistant", content: response.content });
+      this.history.push({ role: "assistant", content: response.content });
 
       if (response.stop_reason === "end_turn") {
         return this.extractText(response);
       }
 
       if (response.stop_reason === "tool_use") {
-        // Provider tools (web_search, web_fetch) are handled server-side
-        // and never appear as tool_use blocks for us to execute.
-        // We only need to handle our own custom tools here.
         const toolUseBlocks = response.content.filter(
           (block): block is Anthropic.ToolUseBlock => block.type === "tool_use",
         );
         const toolResults = await this.executeToolUse(toolUseBlocks);
-        history.push({ role: "user", content: toolResults });
+        this.history.push({ role: "user", content: toolResults });
         continue;
       }
 
       throw new Error(`Unexpected stop_reason: ${response.stop_reason}`);
     }
+  }
+  clearHistory(): void {
+    this.history = [];
   }
 }
